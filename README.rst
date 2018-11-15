@@ -1,7 +1,7 @@
-What Are Unison And ``go-unison``?
-==================================
+What Is ``libunison``?
+======================
 
-**Unison** is an end-to-end (E2E)/peer-to-peer (P2P) networking library for any
+**``libunison``** is an end-to-end (E2E)/peer-to-peer (P2P) networking library for any
 application that needs to self-organize an emerging network of nodes.  Unison is
 built upon existing standardized technologies wherever applicable, in order to
 leverage decades-long research, development, and deployment insights of the
@@ -12,20 +12,18 @@ layers of our highly scalable and performant blockchain network.  We are
 releasing Unison in open source because we believe that E2E/P2P networking can
 enable not only blockchains but a much wider spectrum of applications.
 
-``go-unison`` is our first version of Unison, written for Go.
+What Does ``libunison`` Provide?
+================================
 
-What Does Unison Provide?
-=========================
-
-**Note:** Since Unison is under active development, the list of features in this
+**Note:** Since ``libunison`` is under active development, the list of features in this
 section serves as the development roadmap.  We will release these features in
-the order we see fit.  Please join the unison-announce@harmony.one mailing list
+the order we see fit.  Please join the libunison-announce@harmony.one mailing list
 for feature announcements.
 
 Identity-based Networking
 -------------------------
 
-Unison provides an end-to-end networking layer where hosts are *located* by
+``libunison`` provides an end-to-end networking layer where hosts are *located* by
 their IP addresses but *identified* logically by a cryptographic public key.  A
 node proves its identity using the private key which matches its public-key
 identifier.
@@ -39,9 +37,9 @@ USA” (locator) without specifying the recipient name (identifier), and it woul
 be your responsibility to keep your address book up to date across your
 correspondents' moving to new addresses.
 
-Using Unison, a networking application on a host initiates connections to other
+Using ``libunison``, a networking application on a host initiates connections to other
 hosts not using their IP address *(locator)*, but their public key
-*(identifier).*  Unison implements mechanisms to transparently handle the
+*(identifier).*  ``libunison`` implements mechanisms to transparently handle the
 identifier/locator mapping.
 
 Multicast Networking
@@ -92,7 +90,7 @@ different ways of working around this problem have surfaced.  These are called
 universal, one-size-fits-all approach: The application needs to dynamically
 detect the situation and employ the right mechanism.
 
-Unison automates this, so that your application would not have to concern itself
+``libunison`` automates this, so that your application would not have to concern itself
 with individual NAT traversal mechanisms and their inner workings.
 
 End-to-end Data Integrity And Security
@@ -108,8 +106,8 @@ Modern applications require data protection services these days, including:
   prying eyes, e.g. a man in the middle should be able to glean only the fact
   that some data has been sent and its size, but not its content.
 
-Unison provides these services in end-to-end manner, similar to the guarantees
-provided by TLS.  However, unlike TLS, Unison protects multiple logical flows
+``libunison`` provides these services in end-to-end manner, similar to the guarantees
+provided by TLS.  However, unlike TLS, ``libunison`` protects multiple logical flows
 of data between two nodes in one shot, without having to perform expensive
 security association establishment once for each logical data flow.
 
@@ -152,7 +150,7 @@ defense against cryptanalysis.  This applies both to public/private key pairs
 used as node identifiers and to symmetric keys used for data protection
 services.
 
-Unison provides transparent key cycling services, so that applications do not
+``libunison`` provides transparent key cycling services, so that applications do not
 have to manually deal with them, and that application-level communication
 persists without interruption across key cycling events.
 
@@ -170,7 +168,7 @@ network, at least all of the fully cooperative, “honest” nodes that conform 
 the protocol, and assume the availability of a multicast mechanism that
 enables a sender to send data to at least all of such honest nodes.
 
-Unison provides such a mechanism, using which a node can multicast a message
+``libunison`` provides such a mechanism, using which a node can multicast a message
 to all honest nodes, provided that the ratio of honest nodes to all nodes on
 the network exceeds a minimum threshold, e.g. at least two thirds.
 
@@ -183,7 +181,7 @@ issue.  A degenerate case of this is a technique called *manycast,* where the
 sender simply transmits the same data over and over to each recipient, where
 all transmission burden is placed solely on the sender.
 
-Unison provides a cooperative multicast mechanism, where the amount of data
+``libunison`` provides a cooperative multicast mechanism, where the amount of data
 sent and received by each node is linear to only the size of the message and
 remains constant—*O*(1)–with regard to the size of the multicast group.
 
@@ -211,21 +209,12 @@ presence of packet losses, with much smaller latency jitters, at the expense of
 a slight communication bandwidth overhead.  This applies to both unicast and
 multicast.
 
-Using ``go-unison``
-===================
-
-To use ``go-unison`` in your Go application::
-
-  $ go get simple-rules/go-unison
-
-See the godoc **(TODO)** for details.
-
 Under The Hood
 ==============
 
-This section talks about how Unison implements each of the services mentioned
-above.  **Note:** Since Unison is still under active development, these details
-are subject to change over time.  We plan to freeze these by the time Unison
+This section talks about how ``libunison`` implements each of the services mentioned
+above.  **Note:** Since ``libunison`` is still under active development, these details
+are subject to change over time.  We plan to freeze these by the time ``libunison``
 reaches version 1.0.
 
 Host Identity Protocol Version 2
@@ -233,7 +222,7 @@ Host Identity Protocol Version 2
 
 Standardized in IETF `RFC 7401`_ and various companion documents, the Host
 Identity Protocol Version 2 (HIPv2) suite serves as the groundwork for many of
-the features provided by Unison:
+the features provided by ``libunison``:
 
 * Identifier–locator separation
 * Cryptographic (public-key) node identifier
@@ -256,8 +245,6 @@ guard real application traffic, using another protocol named Encryption Security
 Payload (ESP; `RFC 4303`_).  ESP provides both data integrity service
 using HMAC (`RFC 2104`_) and encryption services using AES (`RFC 3602`_).
 
-12345678901234567890123456789012345678901234567890123456789012345678901234567890
-
 RaptorQ
 -------
 
@@ -271,6 +258,9 @@ RaptorQ (`RFC 6330`_) is a binary object encoding/decoding scheme:
 * The probability of the object recovery is: 99% with *K* chunks, 99.99% with
   *K* + 1 chunks
 
+Insurance Against Packet Loss
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 A commonly used packet recovery mechanism employed by TCP and other protocols
 involves acknowledgements and timeout-based retransmissions: After sending data
 to a recipient, the sender expects a confirmation back from the recipient that
@@ -278,35 +268,47 @@ it has successfully received the data; in absence of such a confirmation within
 some time, the sender assumes that the data has been lost during transit and
 re-sends the same data again, hoping that the data would be delivered this time.
 
+Using RaptorQ, repair information can be sent proactively if the sender expects
+a baseline packet loss.
+
+Cooperative Fair-Share Multicast
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+RapidChain proposes an information dispersal algorithm (IDA) which uses
+Reed–Solomon code to achieve redundancy against non-cooperative nodes.  Because
+Reed–Solomon code has a fixed code rate, the RapidChain IDA has a downside: It
+has a fixed repair information overhead of 50% (assuming 2/3 honesty), even when
+most nodes on the network are honest and little repair information is necessary.
+
+``libunison`` uses RaptorQ instead of Reed–Solomon code, and can bring the code
+rate close to the optimal rate required for actual honesty ratio observed.
+Plus, the sender can generate additional repair symbols pessimistically to
+recover gracefully when the honesty ratio suddenly drops below the currently
+assumed rate, obviating the need to adjust the code rate and restart the round
+(which would be required if a fixed-rate code such as Reed–Solomon were used).
 
 Licensing
 =========
 
 Copyright © 2018, Simple Rules Company.  All rights reserved.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
 
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-The views and conclusions contained in the software and documentation are those
-of the authors and should not be interpreted as representing official policies,
-either expressed or implied, of the go-raptorq project.
 
 .. _Harmony: https://harmony.one/
 .. _RFC 7401: https://tools.ietf.org/html/rfc7401
