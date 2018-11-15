@@ -36,10 +36,10 @@ hosts not using their IP address *(locator)*, but their public key
 *(identifier).*  Unison implements mechanisms to transparently handle the
 identifier/locator mapping.
 
-Group-based Networking
-----------------------
+Multicast Networking
+--------------------
 
-Sometimes your application needs to send messages or objects to not just one
+Sometimes an application needs to send messages or objects to not just one
 other node (termed *unicast*), but to a *group* of nodes on the network.
 Furthermore, your application may need to send messages/objects to *every*
 member (termed *multicast*), or just *one* member (termed *anycast*), in such a
@@ -84,9 +84,26 @@ different ways of working around this problem have surfaced.  These are called
 universal, one-size-fits-all approach: The application needs to dynamically
 detect the situation and employ the right mechanism.
 
-Unison automates this for your application, so that the application would not
-have to concern itself with individual mechanisms and their inner workings.
-would not have to concern itself with the exact mechanisms of 
+Unison automates this, so that your application would not have to concern itself
+with individual NAT traversal mechanisms and their inner workings.
+
+End-to-end Data Integrity And Security
+--------------------------------------
+
+Modern applications require data protection services these days, including:
+
+* Integrity protection: If data sent from one node becomes corrupted—maliciously
+  or accidentally—before reaching its destination node, such as by a man in the
+  middle (MitM) or hardware malfunction, the destination node should be able to
+  detect and discard the data.
+* Encryption: Data sent from one node to another node should be protected from
+  prying eyes, e.g. a man in the middle should be able to glean only the fact
+  that some data has been sent and its size, but not its content.
+
+Unison provides these services in end-to-end manner, similar to the guarantees
+provided by TLS.  However, unlike TLS, Unison protects multiple logical flows
+of data between two nodes in one shot, without having to perform expensive
+security association establishment once for each logical data flow.
 
 Mobility
 --------
@@ -100,8 +117,94 @@ Long-running, background applications often need to continue their network
 communication over such changes.  Unison provides a **mobility** mechanism that
 can solve this problem for your application.
 
+Multihoming
+-----------
+
+Sometimes a networking site (a company, or more rarely, a household), for
+redundancy, connects to the Internet using two or more ISPs (Internet service
+providers), each of which assigns its own IP address or network to the site.
+Such a site is said to be **multihomed**, where a computer consequently obtains
+two or more IP addresses—one from each provider—that it can use to communicate
+with the Internet.  If the Internet connectivity provided by one ISP is down,
+the computer can still use the other ISP(s) to continue communication.  This
+kind of communication handovers, while being possible, is typically quite
+complex to set up and manage for end applications.
+
+Unison handles such connection handovers transparently for the application so
+that application communication is not disrupted as long as the Internet
+connectivity is available via at least one ISP.
+
+Cryptographic Key Lifetime Management
+-------------------------------------
+
+All cryptographic key materials should be cycled periodically, in terms of time
+duration (“use this key only for 24 hours”) and/or amount of data protected by
+the key (“use this key for encrypting up to 1GiB of data”), as a form of
+defense against cryptanalysis.  This applies both to public/private key pairs
+used as node identifiers and to symmetric keys used for data protection
+services.
+
+Unison provides transparent key cycling services, so that applications do not
+have to manually deal with them, and that application-level communication
+persists without interruption across key cycling events.
+
+Adversary-resistant Multicast
+-----------------------------
+
+In contrast to the Internet where directly interfacing networking entities are
+routinely bound by real-life contractual obligations, ad-hoc P2P overlay
+networks often include nodes that are not necessarily fully cooperative.  This
+non-cooperativeness may arise out of rational, selfish, or even downright
+malicious motivations.  As such, reliable communication over such P2P network
+often needs to be implemented with a lower-than-Internet security assumptions,
+and many P2P application protocols aim to serve, if not all nodes on the
+network, at least all of the fully cooperative, “honest” nodes that conform to
+the protocol, and assume the availability of a multicast mechanism that
+enables a sender to send data to at least all of such honest nodes.
+
+Unison provides such a mechanism, using which a node can multicast a message
+to all honest nodes, provided that the ratio of honest nodes to all nodes on
+the network exceeds a minimum threshold, e.g. at least two thirds.
+
+Cooperative, Fair-share Multicast
+---------------------------------
+
+When multicasting a large message to a large number of recipients, the 
+distribution of bandwidth load placed on different nodes involved becomes an
+issue.  A degenerate case of this is a technique called *manycast,* where the
+sender simply transmits the same data over and over to each recipient, where
+all transmission burden is placed solely on the sender.
+
+Unison provides a cooperative multicast mechanism, where the amount of data
+sent and received by each node is linear to only the size of the message and
+remains constant—*O*(1)–with regard to the size of the multicast group.
+
+Stable Latency Jitters
+----------------------
+
+The Internet consists of data links that do not necessarily provide reliable
+transmission of data: Packets (units of transmitted data) can become corrupt, or
+even disappear during transit.  As such, traditional protocols aiming to achieve
+reliable transmission of data, such as TCP, needed to incorporate mechanisms to
+recover from packet losses.
+
+Although TCP is quite robust against transient data losses, it poses one major
+performance problem: Its *latency*—the amount of time a piece of data spends in
+the network before being successfully delivered to the recipient—is not stable.
+It fluctuates substantially around packet losses, and the magnitude of such
+fluctuations, called *latency jitters,* is proportional to the nominal latency
+from the sender to the recipient.  The nominal latency is quite large over
+long-haul connections or over certain cellular data links (such as pre-4G), and
+a proportionally large latency jitter makes it hard for real-time applications
+to adopt or provide time-tight service level agreements (SLAs) or guarantees.
+
+Unison provides a reliable data transport whose latency degrades gradually in
+presence of packet losses, with much smaller latency jitters, at the expense of
+a slight communication bandwidth overhead.  This applies to both unicast and
+multicast.
+
 Using ``go-unison``
-====================
+===================
 
 To use ``go-unison`` in your Go application::
 
@@ -117,11 +220,48 @@ above.  **Note:** Since Unison is still under active development, these details
 are subject to change.  We plan to freeze these by the time Unison reaches
 version 1.0.
 
-Host Identity Protocol Version 2 (HIPv2)
-----------------------------------------
+Host Identity Protocol Version 2
+--------------------------------
+
+Standardized in IETF `RFC 7401`_ and various companion documents, the Host
+Identity Protocol Version 2 (HIPv2) suite serves as the groundwork for many of
+the features provided by Unison:
+
+* Identifier–locator separation
+* Cryptographic (public-key) node identifier
+* End-to-end data protection services
+* NAT traversal
+* Mobility
+* Multihoming
+* Key cycling
+
+Using HIPv2, each of the two end nodes identifying themselves with their own
+public key and wishing to communicate to each other, first proves to the other
+node that it indeed possesses the private key matching its own public-key
+identifier, and jointly establishes a secret key using Diffie–Hellman (DH)
+exchange.  Use of DH exchange ensures that the secret key is known only to the
+two nodes but not to anyone else, including eavesdroppers.  This process is
+known as *base exchange* in HIPv2.
+
+The nodes then use the secret key derived from the base exchange round to
+guard real application traffic, using another protocol named Encryption Security
+Payload (ESP; `RFC 4303`_).  ESP provides both data integrity service
+using HMAC (`RFC 2104`_) and encryption services using modern encryption
+algorithms such as AES.
+
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
 
 RaptorQ Fountain Code
 ---------------------
+
+
+A commonly used packet recovery mechanism employed by TCP and other protocols
+involves acknowledgements and timeout-based retransmissions: After sending data
+to a recipient, the sender expects a confirmation back from the recipient that
+it has successfully received the data; in absence of such a confirmation within
+some time, the sender assumes that the data has been lost during transit and
+re-sends the same data again, hoping that the data would be delivered this time.
+
 
 Licensing
 =========
@@ -151,3 +291,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the go-raptorq project.
+
+.. `Harmony`_: https://harmony.one/
+.. `RFC 7401`_: https://tools.ietf.org/html/rfc7401
+.. `RFC 4303`_: https://tools.ietf.org/html/rfc4303
