@@ -1,5 +1,5 @@
-What Is Unison?
-===============
+What Are Unison And ``go-unison``?
+==================================
 
 **Unison** is an end-to-end (E2E)/peer-to-peer (P2P) networking library for any
 application that needs to self-organize an emerging network of nodes.  Unison is
@@ -12,15 +12,23 @@ layers of our highly scalable and performant blockchain network.  We are
 releasing Unison in open source because we believe that E2E/P2P networking can
 enable not only blockchains but a much wider spectrum of applications.
 
+``go-unison`` is our first version of Unison, written for Go.
+
 What Does Unison Provide?
 =========================
+
+**Note:** Since Unison is under active development, the list of features in this
+section serves as the development roadmap.  We will release these features in
+the order we see fit.  Please join the unison-announce@harmony.one mailing list
+for feature announcements.
 
 Identity-based Networking
 -------------------------
 
 Unison provides an end-to-end networking layer where hosts are *located* by
-their IP addresses but *identified* logically by a cryptographic private/public
-key pair that it holds.
+their IP addresses but *identified* logically by a cryptographic public key.  A
+node proves its identity using the private key which matches its public-key
+identifier.
 
 A real-life analogue of identity-based addressing would be to send a letter
 envelope-addressed to “Tim Cook” (identifier) without having to know his postal
@@ -217,8 +225,8 @@ Under The Hood
 
 This section talks about how Unison implements each of the services mentioned
 above.  **Note:** Since Unison is still under active development, these details
-are subject to change.  We plan to freeze these by the time Unison reaches
-version 1.0.
+are subject to change over time.  We plan to freeze these by the time Unison
+reaches version 1.0.
 
 Host Identity Protocol Version 2
 --------------------------------
@@ -246,14 +254,22 @@ known as *base exchange* in HIPv2.
 The nodes then use the secret key derived from the base exchange round to
 guard real application traffic, using another protocol named Encryption Security
 Payload (ESP; `RFC 4303`_).  ESP provides both data integrity service
-using HMAC (`RFC 2104`_) and encryption services using modern encryption
-algorithms such as AES.
+using HMAC (`RFC 2104`_) and encryption services using AES (`RFC 3602`_).
 
 12345678901234567890123456789012345678901234567890123456789012345678901234567890
 
-RaptorQ Fountain Code
----------------------
+RaptorQ
+-------
 
+RaptorQ (`RFC 6330`_) is a binary object encoding/decoding scheme:
+
+* A binary object can be encoded into a practically infinite number (2**24) of
+  chunks;
+* The original binary object can then be decoded from any *K* number of such
+  encoded chunks with high probability, regardless their combination.  *K* is
+  a constant chosen by the encoder, in the range [10..56403].
+* The probability of the object recovery is: 99% with *K* chunks, 99.99% with
+  *K* + 1 chunks
 
 A commonly used packet recovery mechanism employed by TCP and other protocols
 involves acknowledgements and timeout-based retransmissions: After sending data
@@ -295,3 +311,5 @@ either expressed or implied, of the go-raptorq project.
 .. _Harmony: https://harmony.one/
 .. _RFC 7401: https://tools.ietf.org/html/rfc7401
 .. _RFC 4303: https://tools.ietf.org/html/rfc4303
+.. _RFC 3602: https://tools.ietf.org/html/rfc3602
+.. _RFC 6330: https://tools.ietf.org/html/rfc6330
