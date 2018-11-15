@@ -1,7 +1,7 @@
 What Is ``libunison``?
 ======================
 
-**``libunison``** is an end-to-end (E2E)/peer-to-peer (P2P) networking library for any
+``libunison`` is an end-to-end (E2E)/peer-to-peer (P2P) networking library for any
 application that needs to self-organize an emerging network of nodes.  Unison is
 built upon existing standardized technologies wherever applicable, in order to
 leverage decades-long research, development, and deployment insights of the
