@@ -292,6 +292,6 @@ The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the go-raptorq project.
 
-.. `Harmony`_: https://harmony.one/
-.. `RFC 7401`_: https://tools.ietf.org/html/rfc7401
-.. `RFC 4303`_: https://tools.ietf.org/html/rfc4303
+.. _Harmony: https://harmony.one/
+.. _RFC 7401: https://tools.ietf.org/html/rfc7401
+.. _RFC 4303: https://tools.ietf.org/html/rfc4303
