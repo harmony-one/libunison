@@ -2,7 +2,6 @@ package unison
 
 import (
 	"encoding/binary"
-	"fmt"
 	"net"
 )
 
@@ -22,6 +21,9 @@ const (
 
 // Locator is a host locator, as defined in RFC 8046, section 4.
 type Locator interface {
+	Marshaler
+	Unmarshaler
+
 	// TrafficType returns the traffic type for which the locator is valid.
 	TrafficType() (trafficType uint8)
 
@@ -44,19 +46,12 @@ type Locator interface {
 
 	// SetPreferred sets whether this locator is preferred.
 	SetPreferred(preferred bool)
-
-	// EncodeLocator encodes the locator into the given buffer if not nil,
-	// and returns its length.
-	EncodeLocator(buf []byte) (length uint8)
-
-	// DecodeLocator decodes the locator into this object.
-	DecodeLocator(buf []byte) (err error)
 }
 
 // LocatorBase is the base implementation of locator,
 // common to all locator types.
 // Concrete implementations may embed this,
-// but should still implement LocatorType() and Encode-/DecodeLocator().
+// but should still implement LocatorType() and Encode-/UnmarshalUnison().
 // They should also expose type-specific field getters/setters.
 type LocatorBase struct {
 	trafficType uint8
@@ -108,31 +103,30 @@ func (loc *IPLocator) LocatorType() (locatorType uint8) {
 	return LocatorTypeIP
 }
 
-// EncodeLocator encodes the locator into the given buffer if not nil,
+// MarshalUnisonSize returns the number of bytes required for marshaling this
+// locator.
+func (loc *IPLocator) MarshalUnisonSize() (requiredSize int) {
+	return 16
+}
+
+// MarshalUnison encodes the locator into the given buffer if not nil,
 // and returns its length.
-func (loc *IPLocator) EncodeLocator(buf []byte) (length uint8) {
-	if buf != nil {
-		copy(buf, loc.ip.To16())
+func (loc *IPLocator) MarshalUnison(buf []byte) (written int, err error) {
+	if err = CheckMarshalSize(loc, buf); err != nil {
+		return
 	}
-	length = 16
+	copy(buf, loc.ip.To16())
+    written = loc.MarshalUnisonSize()
 	return
 }
 
-// DecodeLocator decodes the locator into this object.
-func (loc *IPLocator) DecodeLocator(buf []byte) (err error) {
-	ip := net.IP(buf)
-	switch len(ip) {
-	case net.IPv4len:
-		loc.ip = ip
-	case net.IPv6len:
-		if ipv4 := ip.To4(); ipv4 != nil {
-			loc.ip = ipv4
-		} else {
-			loc.ip = ip
-		}
-	default:
-		err = fmt.Errorf("invalid encoded IP address %+v", buf)
+// UnmarshalUnison decodes the locator into this object.
+func (loc *IPLocator) UnmarshalUnison(buf []byte) (consumed int, err error) {
+	if err = CheckMarshalSize(loc, buf); err != nil {
+		return
 	}
+	loc.ip = append(buf[:0:0], buf[:16]...)
+	consumed = loc.MarshalUnisonSize()
 	return
 }
 
@@ -143,7 +137,7 @@ func (loc *IPLocator) IP() (ip net.IP) {
 
 // SetIP sets the IP address of this locator.
 func (loc *IPLocator) SetIP(ip net.IP) {
-	loc.ip = ip
+	loc.ip = append(ip[:0:0], ip...)
 }
 
 // IPESPLocator is an IP-address-only locator.  Used (mainly) for HIP signaling.
@@ -160,40 +154,32 @@ func (loc *IPESPLocator) LocatorType() (locatorType uint8) {
 	return LocatorTypeIPESP
 }
 
-// EncodeLocator encodes the locator into the given buffer if not nil,
+// MarshalUnisonSize returns the number of bytes required for marshaling this
+// locator.
+func (loc *IPESPLocator) MarshalUnisonSize() (requiredSize int) {
+	return 20
+}
+
+// MarshalUnison encodes the locator into the given buffer if not nil,
 // and returns its length.
-func (loc *IPESPLocator) EncodeLocator(buf []byte) (length uint8) {
-	if buf != nil {
-		var spiBuf [4]byte
-		binary.BigEndian.PutUint32(spiBuf[:], loc.spi)
-		copy(buf, spiBuf[:])
-		copy(buf[4:], loc.ip.To16())
+func (loc *IPESPLocator) MarshalUnison(buf []byte) (written int, err error) {
+	if err = CheckMarshalSize(loc, buf); err != nil {
+		return
 	}
-	length = 20
+	binary.BigEndian.PutUint32(buf, loc.spi)
+	copy(buf[4:], loc.ip.To16())
+	written = 20
 	return
 }
 
-// DecodeLocator decodes the locator into this object.
-func (loc *IPESPLocator) DecodeLocator(buf []byte) (err error) {
-	if len(buf) < 4 {
-		err = fmt.Errorf("truncated IP-ESP locator %+v", buf)
-		return
+// UnmarshalUnison decodes the locator into this object.
+func (loc *IPESPLocator) UnmarshalUnison(buf []byte) (consumed int, err error) {
+    if err = CheckMarshalSize(loc, buf); err != nil {
+    	return
 	}
-	spi := binary.BigEndian.Uint32(buf)
-	ip := net.IP(buf[4:])
-	switch len(ip) {
-	case net.IPv4len:
-		loc.ip = ip
-	case net.IPv6len:
-		if ipv4 := ip.To4(); ipv4 != nil {
-			ip = ipv4
-		}
-	default:
-		err = fmt.Errorf("invalid encoded IP address %+v", buf)
-		return
-	}
-	loc.spi = spi
-	loc.ip = ip
+	loc.spi = binary.BigEndian.Uint32(buf)
+    loc.ip = append(buf[:0:0], buf[4:20]...)
+    consumed = loc.MarshalUnisonSize()
 	return
 }
 
@@ -214,7 +200,7 @@ func (loc *IPESPLocator) IP() (ip net.IP) {
 
 // SetIP sets the IP address of this locator.
 func (loc *IPESPLocator) SetIP(ip net.IP) {
-	loc.ip = ip
+	loc.ip = append(ip[:0:0], ip...)
 }
 
 // Transport locator kind, as defined in Table 2 in RFC 5770, section 5.7.
@@ -250,49 +236,44 @@ func (loc *TransportLocator) LocatorType() (locatorType uint8) {
 	return LocatorTypeTransport
 }
 
-// EncodeLocator encodes the locator into the given buffer if not nil,
+// MarshalUnisonSize returns the number of bytes required for marshaling this
+// locator.
+func (loc *TransportLocator) MarshalUnisonSize() (requiredSize int) {
+	return 28
+}
+
+// MarshalUnison encodes the locator into the given buffer if not nil,
 // and returns its length.
-func (loc *TransportLocator) EncodeLocator(buf []byte) (length uint8) {
-	if buf != nil {
-		var portBuf [2]byte
-		var priorityBuf, spiBuf [4]byte
-		binary.BigEndian.PutUint16(portBuf[:], loc.port)
-		binary.BigEndian.PutUint32(priorityBuf[:], loc.priority)
-		binary.BigEndian.PutUint32(spiBuf[:], loc.spi)
-		copy(buf, portBuf[:])
-		buf[2] = loc.protocol
-		buf[3] = loc.kind
-		copy(buf[4:], priorityBuf[:])
-		copy(buf[8:], spiBuf[:])
-		copy(buf[12:], loc.ip.To16())
+func (loc *TransportLocator) MarshalUnison(buf []byte) (
+	written int, err error,
+) {
+	if err = CheckMarshalSize(loc, buf); err != nil {
+		return
 	}
-	length = 28
+	binary.BigEndian.PutUint16(buf, loc.port)
+	buf[2] = loc.protocol
+	buf[3] = loc.kind
+	binary.BigEndian.PutUint32(buf[4:], loc.priority)
+	binary.BigEndian.PutUint32(buf[8:], loc.spi)
+	copy(buf[12:], loc.ip.To16())
+    written = loc.MarshalUnisonSize()
 	return
 }
 
-// DecodeLocator decodes the locator into this object.
-func (loc *TransportLocator) DecodeLocator(buf []byte) (err error) {
-	if len(buf) < 12 {
-		err = fmt.Errorf("truncated IP-ESP locator %+v", buf)
+// UnmarshalUnison decodes the locator into this object.
+func (loc *TransportLocator) UnmarshalUnison(buf []byte) (
+	consumed int, err error,
+) {
+	if err = CheckMarshalSize(loc, buf); err != nil {
 		return
 	}
-	port := binary.BigEndian
-	spi := binary.BigEndian.Uint32(buf)
-	buf = buf[4:]
-	ip := net.IP(buf)
-	switch len(ip) {
-	case net.IPv4len:
-		loc.ip = ip
-	case net.IPv6len:
-		if ipv4 := ip.To4(); ipv4 != nil {
-			ip = ipv4
-		}
-	default:
-		err = fmt.Errorf("invalid encoded IP address %+v", buf)
-		return
-	}
-	loc.spi = spi
-	loc.ip = ip
+	loc.port = binary.BigEndian.Uint16(buf)
+    loc.protocol = buf[2]
+    loc.kind = buf[3]
+	loc.priority = binary.BigEndian.Uint32(buf[4:])
+	loc.spi = binary.BigEndian.Uint32(buf[8:])
+	loc.ip = append(buf[:0:0], buf[12:28]...)
+    consumed = loc.MarshalUnisonSize()
 	return
 }
 
@@ -355,22 +336,5 @@ func (loc *TransportLocator) IP() (ip net.IP) {
 
 // SetIP sets the IP address of this locator.
 func (loc *TransportLocator) SetIP(ip net.IP) {
-	loc.ip = ip
-}
-
-func decodeIP(buf []byte) (ip net.IP, err error) {
-	clone = net.IP(buf)
-	switch len(ip) {
-	case net.IPv4len:
-		loc.ip = ip
-	case net.IPv6len:
-		if ipv4 := ip.To4(); ipv4 != nil {
-			loc.ip = ipv4
-		} else {
-			loc.ip = ip
-		}
-	default:
-		err = fmt.Errorf("invalid encoded IP address %+v", buf)
-	}
-	return
+	loc.ip = append(ip[:0:0], ip...)
 }

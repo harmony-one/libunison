@@ -1,7 +1,6 @@
 package unison
 
 import (
-	"github.com/harmony-one/libunison/pkg/unison/util"
 	"time"
 )
 
@@ -9,16 +8,16 @@ import (
 // Implementations shall ensure that identities are comparable,
 // so that they can be used as map keys.
 type NodeID interface {
-	util.Marshaler
-	util.Unmarshaler
+	Marshaler
+	Unmarshaler
 }
 
 // NodeLocator is a node locator (that is, for now, an IP address).
 // Implementations shall ensure that locators are comparable,
 // so that they can be used as map keys.
 type NodeLocator interface {
-	util.Marshaler
-	util.Unmarshaler
+	Marshaler
+	Unmarshaler
 }
 
 // Node is a node interface, common to both local and remote.
@@ -40,4 +39,3 @@ type Node interface {
 	// For use by discovery mechanisms.
 	RemoveLocator(loc NodeLocator) (err error)
 }
-
