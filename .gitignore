@@ -1,0 +1,39 @@
+# test files
+*.pdf
+*.png
+
+# tmp files, configs and logs
+*.out
+*.dat
+*.log
+**/received
+**/configs
+**/logs
+
+# binary
+cmd/**/ida
+
+.idea
+.DS_Store
+
+# CMake
+cmake-build-*/
+
+# Mongo Explorer plugin
+.idea/**/mongoSettings.xml
+
+# File-based project format
+*.iws
+
+# IntelliJ
+out/
+
+# JIRA plugin
+atlassian-ide-plugin.xml
+
+# Crashlytics plugin (for Android Studio and IntelliJ)
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+
