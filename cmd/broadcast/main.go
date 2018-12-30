@@ -12,13 +12,21 @@ import (
 	"time"
 )
 
+// InitCoopCastNode creates a coopcast node
 func InitCoopCastNode(confignbr string, configallpeer string, t0 float64, t1 float64, t2 float64, base float64, hop int) *coopcast.Node {
 	rand.Seed(time.Now().UTC().UnixNano())
 	config1 := NewConfig()
-	config1.ReadConfigFile(confignbr)
+	err := config1.ReadConfigFile(confignbr)
+	if err != nil {
+		log.Printf("unable to read config file %v", confignbr)
+	}
 	selfPeer, peerList, _ := config1.GetPeerInfo()
 	config2 := NewConfig()
-	config2.ReadConfigFile(configallpeer)
+	err = config2.ReadConfigFile(configallpeer)
+	if err != nil {
+		log.Printf("unable to read config file %v", configallpeer)
+	}
+
 	_, _, allPeers := config2.GetPeerInfo()
 	Cache := make(map[coopcast.HashKey]*coopcast.RaptorQImpl)
 	SenderCache := make(map[coopcast.HashKey]bool)
@@ -27,12 +35,19 @@ func InitCoopCastNode(confignbr string, configallpeer string, t0 float64, t1 flo
 	return &node
 }
 
+// InitManyCastNode creates a manycast node
 func InitManyCastNode(confignbr string, configallpeer string) *manycast.Node {
 	config1 := NewConfig()
-	config1.ReadConfigFile(confignbr)
+	err := config1.ReadConfigFile(confignbr)
+	if err != nil {
+		log.Printf("unable to read config file %v", confignbr)
+	}
 	selfPeer, peerList, _ := config1.GetPeerInfo()
 	config2 := NewConfig()
-	config2.ReadConfigFile(configallpeer)
+	err = config2.ReadConfigFile(configallpeer)
+	if err != nil {
+		log.Printf("unable to read config file %v", configallpeer)
+	}
 	_, _, allPeers := config2.GetPeerInfo()
 	node := manycast.Node{SelfPeer: selfPeer, PeerList: peerList, AllPeers: allPeers}
 	return &node

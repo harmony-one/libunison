@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	Received             byte          = 0
+	metaReceived         byte          = 0
 	pubKeySize           int           = 20
 	stopBroadCastTime    time.Duration = 100 // unit is second
 	cacheClearInterval   time.Duration = 250 // clear cache every xx seconds
@@ -18,10 +18,11 @@ const (
 	normalChunkSize      int           = 100 * 1200
 	symbolSize           int           = 1200 // must be multiple of Al(=4) required by RFC6330
 
-	HashSize  int     = 20  // sha1 hash size
-	Threshold float32 = 0.8 // threshold rate of number of neighors decode message successfully
+	hashSize  int     = 20  // sha1 hash size
+	threshold float32 = 0.8 // threshold rate of number of neighors decode message successfully
 )
 
+// Peer represent identification information of a peer node
 type Peer struct {
 	IP      string
 	TCPPort string
@@ -29,10 +30,13 @@ type Peer struct {
 	PubKey  string
 	Sid     int
 }
-type HashKey [HashSize]byte
 
+// HashKey is the array of fixed size can be used as key in golang dictionary
+type HashKey [hashSize]byte
+
+// Node represents a node using coopcast to send and receive message
 type Node struct {
-	GossipIDA
+	BroadCaster
 
 	SelfPeer           Peer
 	PeerList           []Peer
@@ -49,6 +53,7 @@ type Node struct {
 	mux sync.Mutex
 }
 
+// RaptorQImpl represents raptorQ structure holding necessary information for encoding and decoding message
 type RaptorQImpl struct {
 	Encoder map[int]libraptorq.Encoder
 	Decoder map[int]libraptorq.Decoder
@@ -66,8 +71,8 @@ type RaptorQImpl struct {
 	stats           map[int]float64 // for benchmark purpose
 }
 
-// IDA broadcast using RaptorQ interface
-type GossipIDA interface {
+// BroadCaster interface define the broadcast interface for coopcast for both receiver and sender sides
+type BroadCaster interface {
 	BroadCast(msg []byte, pc net.PacketConn) (context.CancelFunc, *RaptorQImpl)
 	StopBroadCast(cancel context.CancelFunc, raptorq *RaptorQImpl)
 	ListeningOnBroadCast(pc net.PacketConn)

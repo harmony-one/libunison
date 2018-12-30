@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+// BroadCast let sender broadcast message to peer nodes
 func (node *Node) BroadCast(msg []byte) {
 	var wg sync.WaitGroup
 	t1 := time.Now().UnixNano()
@@ -26,7 +27,7 @@ func (node *Node) BroadCast(msg []byte) {
 			continue
 		}
 		wg.Add(1)
-		go SendData(conn, msg, &wg)
+		go sendData(conn, msg, &wg)
 	}
 	log.Printf("waiting connection to close...")
 	wg.Wait()
@@ -34,7 +35,7 @@ func (node *Node) BroadCast(msg []byte) {
 	log.Printf("finish sending data to all peers with %v ms", (t2-t1)/1000000)
 }
 
-func SendData(conn net.Conn, msg []byte, wg *sync.WaitGroup) {
+func sendData(conn net.Conn, msg []byte, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer conn.Close()
 	timeoutDuration := 2 * time.Second
@@ -51,6 +52,7 @@ func SendData(conn net.Conn, msg []byte, wg *sync.WaitGroup) {
 	log.Printf("%v bytes write", n)
 }
 
+// ListeningOnUniCast let receiver listening and receive message from the sender
 func (node *Node) ListeningOnUniCast() {
 	addr := net.JoinHostPort("127.0.0.1", node.SelfPeer.TCPPort)
 	ln, err := net.Listen("tcp", addr)
@@ -68,11 +70,11 @@ func (node *Node) ListeningOnUniCast() {
 		}
 		clientinfo := conn.RemoteAddr().String()
 		log.Printf("accept connection from %s", clientinfo)
-		go node.HandleData(conn)
+		go node.handleData(conn)
 	}
 }
 
-func (node *Node) HandleData(conn net.Conn) {
+func (node *Node) handleData(conn net.Conn) {
 	defer conn.Close()
 	c := bufio.NewReader(conn)
 	size := make([]byte, 8)

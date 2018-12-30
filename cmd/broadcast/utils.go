@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/hex"
-	"fmt"
 	ida "github.com/harmony-one/libunison/internal/ida/coopcast"
 	"io"
 	"log"
@@ -14,7 +13,7 @@ import (
 	"time"
 )
 
-const PubKeySize int = 20
+const pubKeySize int = 20
 
 // Entry is a single config of a node.
 type Entry struct {
@@ -37,6 +36,7 @@ func NewConfig() *Config {
 	return &config
 }
 
+// GetPeerInfo returns the selfPeer, peerList, allPeers from config instance, which used to create node instance
 func (config *Config) GetPeerInfo() (ida.Peer, []ida.Peer, []ida.Peer) {
 	var allPeers []ida.Peer
 	var peerList []ida.Peer
@@ -79,16 +79,7 @@ func (config *Config) ReadConfigFile(filename string) error {
 	return nil
 }
 
-func test() {
-	config := NewConfig()
-	filename := "./config1.txt"
-	config.ReadConfigFile(filename)
-	p1, p2, p3 := config.GetPeerInfo()
-	fmt.Println("self:", p1)
-	fmt.Println("nbr:", p2)
-	fmt.Println("all:", p3)
-}
-
+// GenerateConfigFromGraph generate config files from graph config file using adjacent map definition of a graph
 func GenerateConfigFromGraph(graphfile string) {
 	file, err := os.Open(graphfile)
 	if err != nil {
@@ -104,15 +95,15 @@ func GenerateConfigFromGraph(graphfile string) {
 	if err != nil {
 		log.Printf("not able to convert to number of nodes")
 	}
-	pubkeys, tcps, udps := InitConfig(n)
+	pubkeys, tcps, udps := initConfig(n)
 
 	for fscanner.Scan() {
 		p := strings.Split(fscanner.Text(), " ")
-		WriteGraphRelationToConfig(p, n, pubkeys, tcps, udps)
+		writeGraphRelationToConfig(p, n, pubkeys, tcps, udps)
 	}
 }
 
-func InitConfig(n int) (map[int][]byte, []int, []int) {
+func initConfig(n int) (map[int][]byte, []int, []int) {
 	filename := "configs/config_allpeers.txt"
 	f, err := os.Create(filename)
 	if err != nil {
@@ -132,8 +123,11 @@ func InitConfig(n int) (map[int][]byte, []int, []int) {
 		ts := strconv.Itoa(tcpport)
 		us := strconv.Itoa(udpport)
 		line := sid + " 127.0.0.1 " + ts + " " + us + " "
-		buf := make([]byte, PubKeySize)
-		rand.Read(buf)
+		buf := make([]byte, pubKeySize)
+		_, err := rand.Read(buf)
+		if err != nil {
+			log.Printf("unable to create random number")
+		}
 		pubkey := hex.EncodeToString(buf)
 		line = line + pubkey + " 2\n"
 		tcps[i] = tcpport
@@ -146,7 +140,7 @@ func InitConfig(n int) (map[int][]byte, []int, []int) {
 	return pubkeys, tcps, udps
 }
 
-func WriteGraphRelationToConfig(p []string, n int, pubkeys map[int][]byte, tcps []int, udps []int) {
+func writeGraphRelationToConfig(p []string, n int, pubkeys map[int][]byte, tcps []int, udps []int) {
 	filename := "configs/config_" + p[0] + ".txt"
 	f, err := os.Create(filename)
 	if err != nil {
