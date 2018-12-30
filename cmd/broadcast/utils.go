@@ -12,14 +12,17 @@ import (
 	"strings"
 )
 
+// Role is the role of the node, has 3 roles: self, neighbor, all
 type Role int
 
+// Node roles
 const (
-	Self       Role = 0
-	Neighbor   Role = 1
-	All        Role = 2
-	pubKeySize int  = 20
+	Self     Role = 0
+	Neighbor Role = 1
+	All      Role = 2
 )
+
+const pubKeySize int = 20
 
 // PeerConfig is a single config of a node.
 type PeerConfig struct {
