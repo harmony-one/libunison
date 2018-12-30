@@ -1,7 +1,7 @@
 ## Benchmark test for coopcast
 
 #### What is Coopcast
-Coopcast is a fast, scalable and fault resilient network protocol to deliver messages to a group of nodes in the network. 
+Coopcast (cooperative multicast) is a fast, scalable and fault resilient network protocol to deliver messages to a group of nodes in the network. 
 The sender uses RaptorQ encoder (RFC6330) to encode the message and broadcasts small pieces of the encoded message (called Symbol) to its neighbor peers. Each peer who receives the Symbol will also responsible to relay it to its own neighbor peers, that's why we call it Coop(erate) Cast. 
 
 ##### Fast
@@ -28,8 +28,10 @@ It depends on the following library:
 ###### Build go executable
 ./build.sh
 
-###### Generate network topology (generate a network of 5 nodes, fully connected)
+###### Generate network topology 
 ./generate_configs.sh  graph1.txt
+
+It generates a network of 5 nodes, fully connected. The first line of graph1.txt is the number of nodes in the network. The rest lines describe the neighborhood of a given node. For example, if a line is 0 1 2 3, it means the node 0 will have 3 outgoing/neighbor peers which are node 1, node 2 and node 3
 
 ###### Start 4 server nodes (0,1,2,3) waiting for receiving messages
 ./start_server 5  [coopcast|manycast]

@@ -2,6 +2,7 @@ package coopcast
 
 import (
 	"context"
+	"crypto/sha1"
 	libraptorq "github.com/harmony-one/go-raptorq/pkg/raptorq"
 	"net"
 	"sync"
@@ -15,10 +16,10 @@ const (
 	cacheClearInterval   time.Duration = 250 // clear cache every xx seconds
 	enforceClearInterval int64         = 300 // clear old cache eventually
 	udpCacheSize         int           = 2 * 1024
-	normalChunkSize      int           = 100 * 1200
 	symbolSize           int           = 1200 // must be multiple of Al(=4) required by RFC6330
+	normalChunkSize      int           = 100 * symbolSize
 
-	hashSize  int     = 20  // sha1 hash size
+	hashSize  int     = sha1.Size
 	threshold float32 = 0.8 // threshold rate of number of neighors decode message successfully
 )
 
@@ -50,7 +51,7 @@ type Node struct {
 	Cache              map[HashKey]*RaptorQImpl
 	PeerDecodedCounter map[HashKey]map[int]int
 
-	mux sync.Mutex
+	mux sync.Mutex // mutex protect the concurrent write to the map in node, but not protect the fields in RaptorQimpl
 }
 
 // RaptorQImpl represents raptorQ structure holding necessary information for encoding and decoding message
